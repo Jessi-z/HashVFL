@@ -53,7 +53,8 @@ modelbase = '/home/qpy/vhash/pretrained' if os.path.exists(
     '/home/qpy/vhash/pretrained') else 'C:\\Users\\Qiupys\\PycharmProjects\\vhash\\pretrained'
 directory = "{}_{}_{}_{}".format(args.dataset_name, args.encode_length, args.num_party, args.defense)
 
-channel = 1 if dataset_name == 'mnist' else 3
+channel = 1 
+# if dataset_name == 'mnist' else 3
 
 
 # computes total variation for an image
@@ -95,30 +96,34 @@ if os.path.exists(os.path.join(modelbase, directory)):
     fake = torch.empty([1, channel, input_size, int(input_size / 2)]).fill_(0.5).to(device).requires_grad_(True)
     optimizer = torch.optim.Adam([fake], lr=1e-3, amsgrad=True)
 
-    lambda_tv = 1
+    # lambda_tv = 1
     lambda_l2 = 0.1
     for iter in tqdm(range(args.epochs)):
         workers[0].eval()
         optimizer.zero_grad()
         embeds, codes = workers[0](fake)
         mse_loss = torch.nn.MSELoss()(embeds, real_embeds)
-        tv_loss = TV(fake)
+        # tv_loss = TV(fake)
         l2_loss = l2loss(fake)
-        loss = mse_loss + lambda_tv * tv_loss + lambda_l2 * l2_loss
+        # loss = mse_loss + lambda_tv * tv_loss + lambda_l2 * l2_loss
+        loss = mse_loss + lambda_l2 * l2_loss
         loss.backward(retain_graph=True)
         optimizer.step()
-
+    '''
     plt.subplot(1, 2, 1)
     real_img = np.transpose(real.numpy(), (1, 2, 0))
     plt.imshow(real_img)
+    '''
     # np.save(os.path.join('C:\\Users\\Qiupys\\PycharmProjects\\vhash\\reconstruct',
     #                      '{}_{}_{}_ground_truth'.format(dataset_name, args.encode_length, y)), real_img)
+    '''
     plt.subplot(1, 2, 2)
     fake_img = np.transpose(fake.squeeze(0).cpu().detach().numpy(), (1, 2, 0))
     plt.imshow(fake_img)
+    plt.show()
+    '''
     # np.save(os.path.join('C:\\Users\\Qiupys\\PycharmProjects\\vhash\\reconstruct',
     #                      '{}_{}_{}_no_defense'.format(dataset_name, args.encode_length, y)), fake_img)
-    plt.show()
     # plt.imshow(value[0])
     # plt.show()
 
