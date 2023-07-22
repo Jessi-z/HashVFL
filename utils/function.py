@@ -89,15 +89,6 @@ def prepareModels(dataset_name, num_features, encode_length, defense, epsilon, n
             workers.append(
                 MLP(in_features=num_feature, out_features=encode_length, defense=defense, epsilon=epsilon,
                     device=device, num_layers=num_layers).to(device))
-    elif dataset_name in ['imdb']:
-        for _ in range(len(num_features)):
-            workers.append(BertBaseModel(encode_length, defense, epsilon, device).to(device))
-    elif dataset_name in ['mnist', 'cifar10', 'cifar100', 'emotion']:
-        in_channels = 1 if dataset_name in ['mnist'] else 3
-        for _ in range(len(num_features)):
-            workers.append(
-                MyResNet(in_channels=in_channels, encode_length=encode_length, defense=defense, epsilon=epsilon,
-                         device=device).to(device))
     else:
         logging.info('Not supported datatype!')
         exit()
