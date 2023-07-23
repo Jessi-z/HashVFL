@@ -3,6 +3,7 @@ import logging
 import torch
 import math
 import numpy as np
+import pandas as pd
 
 import torchvision.models
 from torch.nn import BatchNorm1d, Dropout, Linear, Conv2d, Sequential, LSTM, Embedding
@@ -197,6 +198,71 @@ class MLP(torch.nn.Module):
         layers.append(torch.nn.Linear(in_features=int(math.pow(2, 5)), out_features=self.out_features))
         return torch.nn.Sequential(*layers)
 
+class Wide_layer(Layer):
+    def __init__(self, output_dim):
+        super().__init__()
+        self.output_dim = output_dim
+
+    def build(self, input_shape):
+        self.layer = torch.nn.Linear(input_shape[-1], self.output_dim)
+
+    def call(self, inputs, **kwargs):   
+        x = self.layer(inputs)
+        return x
+
+
+class Deep_layer(Layer):
+    def __init__(self, hidden_units, output_dim, activation):
+        super().__init__()
+        self.hidden_layer = [Dense(i, activation=activation) for i in hidden_units]
+        self.output_layer = Dense(output_dim, activation=None)
+
+    def call(self, inputs, **kwargs):
+        x = inputs
+        for layer in self.hidden_layer:
+            x = layer(x)
+        output = self.output_layer(x)
+        return output
+
+class Wide_Deep_Model(torch.nn.Module):
+    def __init__(self, in_features, out_features, defense, epsilon, device, num_layers=1, embedding_size):
+        # 对继承自父类nn.Module的属性进行初始化。用nn.Module的初始化方法来初始化继承的属性。 in_features: num of features out_features: encoding_length 
+        super(Wide_Deep_Model, self).__init__()
+        self.dense_inputs, self.sparse_inputs = in_features[:, :13], in_features[:, 13:25]
+        self.out_features = out_features
+        self.num_layers = num_layers
+        self.defense = defense
+        self.epsilon = epsilon
+        self.batch_norm = BatchNorm1d(num_features=out_features)
+        self.device = device
+        self.embedding_size = embedding_size
+        self.embedding_layer = {'embed_layer'+str(i): Embedding(feat.nunique(), self.embedding_size)
+                                for i,feat in enumerate(self.sparse_inputs)}
+        self.wide = Wide_layer(self.out_features)
+        self.hidden_units = [256, 128, 64]
+        self.deep = Deep_layer(self.hidden_units, self.out_features, activation = 'relu')
+
+    def forward(self, x):
+        dense_inputs, sparse_inputs= x[:, :13], x[:, 13:]
+        # wide部分
+        onehot_inputs = pd.get_dummies(sparse_inputs)
+        wide_input = tf.concat([dense_inputs, onehot_inputs], axis=1)
+        wide_output = self.wide(wide_input)
+
+        # deep部分
+        sparse_embed = tf.concat([self.embedding_layer['embed_layer'+str(i)](sparse_inputs[:, i]) \
+                        for i in range(sparse_inputs.shape[-1])], axis=1)
+        sparse_embed = tf.concat([sparse_embed, dense_inputs], axis=1)
+        deep_output = self.deep(sparse_embed)
+
+        x = wide_output + deep_output
+
+        if not self.defense:
+            return x, hash_layer(x)
+        x = self.batch_norm(x)
+        noise = generateNoise(x.size(), self.epsilon, self.device)
+        return x, hash_layer(x) + noise
+        
 
 class Server(torch.nn.Module):
     def __init__(self, num_party, in_features, num_classes, num_layers=1):
