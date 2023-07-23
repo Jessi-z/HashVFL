@@ -5,7 +5,7 @@ import torch
 import numpy as np
 import random
 
-from utils.model import MLP, MyResNet, BertBaseModel, MyVGGNet, Server
+from utils.model import Wide_Deep_Model, Server
 
 
 def setupSeed(seed):
@@ -84,10 +84,10 @@ def loadOrthogonalTargets(filename):
 def prepareModels(dataset_name, num_features, encode_length, defense, epsilon, num_party, num_classes, num_layers,
                   device):
     workers = []
-    if dataset_name in ['bank', 'criteo']:
+    if dataset_name in ['criteo']:
         for num_feature in num_features:
             workers.append(
-                MLP(in_features=num_feature, out_features=encode_length, defense=defense, epsilon=epsilon,
+                Wide_Deep_Model(in_features=num_feature, out_features=encode_length, defense=defense, epsilon=epsilon,
                     device=device, num_layers=num_layers).to(device))
     else:
         logging.info('Not supported datatype!')
@@ -99,9 +99,9 @@ def prepareModels(dataset_name, num_features, encode_length, defense, epsilon, n
 def loadModels(root, dataset_name, num_features, encode_length, defense, epsilon, num_party, num_classes, num_layers,
                device):
     workers = []
-    if dataset_name in ['bank', 'criteo']:
+    if dataset_name in ['criteo']:
         for i, num_feature in enumerate(num_features):
-            worker = MLP(in_features=num_feature, out_features=encode_length, defense=defense, epsilon=epsilon,
+            worker = Wide_Deep_Model(in_features=num_feature, out_features=encode_length, defense=defense, epsilon=epsilon,
                          device=device, num_layers=num_layers).to(device)
             path = os.path.join(root, 'worker_{}.pt'.format(i))
             worker.load_state_dict(torch.load(path))
@@ -118,10 +118,10 @@ def loadModels(root, dataset_name, num_features, encode_length, defense, epsilon
 
 def loadBottomModels(dataset_name, num_features, encode_length, epsilon, defense, device, num_layers=1):
     workers = []
-    if dataset_name in ['bank', 'criteo']:
+    if dataset_name in ['criteo']:
         for num_feature in num_features:
             workers.append(
-                MLP(in_features=num_feature, out_features=encode_length, defense=defense, epsilon=epsilon,
+                Wide_Deep_Model(in_features=num_feature, out_features=encode_length, defense=defense, epsilon=epsilon,
                     device=device, num_layers=num_layers).to(device))
     else:
         logging.info('Not supported datatype!')
