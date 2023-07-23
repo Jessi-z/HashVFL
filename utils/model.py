@@ -225,7 +225,7 @@ class Deep_layer(Layer):
         return output
 
 class Wide_Deep_Model(torch.nn.Module):
-    def __init__(self, in_features, out_features, defense, epsilon, device, num_layers=1, embedding_size):
+    def __init__(self, in_features, out_features, defense, epsilon, device, num_layers=1, embedding_size = 8):
         # 对继承自父类nn.Module的属性进行初始化。用nn.Module的初始化方法来初始化继承的属性。 in_features: num of features out_features: encoding_length 
         super(Wide_Deep_Model, self).__init__()
         self.dense_inputs, self.sparse_inputs = in_features[:, :13], in_features[:, 13:25]
