@@ -15,6 +15,7 @@ parser.add_argument('--encode_length', default=4, type=int, help='hash length')
 parser.add_argument('--num_party', default=2, type=int, help='number of participants')
 parser.add_argument('--defense', default=False, type=ast.literal_eval, help='whether use defense strategy or not')
 parser.add_argument('--epsilon', default=0, type=int, help='epsilon-DP guarantee')
+parser.add_argument('--model_path', default="", type=str, help='The path to save pretrained model')
 args = parser.parse_args()
 
 # environment setup
@@ -48,8 +49,8 @@ logger = setupLogger(filename)
 
 # load models
 logging.info('Preparing model')
-modelbase = '/home/qpy/vhash/pretrained' if os.path.exists(
-    '/home/qpy/vhash/pretrained') else 'C:\\Users\\Qiupys\\PycharmProjects\\vhash\\pretrained'
+modelbase = args.model_path 
+assert(os.path.exists(args.model_path)
 directory = "{}_{}_{}_{}".format(args.dataset_name, args.encode_length, args.num_party, args.defense)
 
 train_accuracies = []
